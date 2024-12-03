@@ -1,0 +1,6 @@
+@GGLogsApi_HostAddress = http://localhost:5183
+
+GET {{GGLogsApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
