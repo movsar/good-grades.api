@@ -25,6 +25,13 @@ namespace GGLogsApi.Controllers
 
         }
 
+        [HttpGet]
+        public List<LogMessage> Get(int n)
+        {
+            List<LogMessage> result = _appContext.LogMessages.AsEnumerable().OrderBy(item => item.CreatedAt).Take(n).ToList();
+            return result;
+        }
+
 
     }
 }

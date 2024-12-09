@@ -10,6 +10,6 @@
         public int Type { get; set; } = 2;
         public string Message { get; set; } = null!;
         public string? Details { get; set; }
-        public DateTime CreatedAt = DateTime.Now;
+        public string CreatedAt = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
     }
 }
