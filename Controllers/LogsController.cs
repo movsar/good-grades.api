@@ -18,11 +18,9 @@ namespace GGLogsApi.Controllers
         public void Post(string message, string stacktrace)
         {
             LogMessage _logMessage = new LogMessage();
-            _logMessage.Details = stacktrace;
             _logMessage.Message = message;
             _appContext.Add(_logMessage);
             _appContext.SaveChanges();
-
         }
 
         [HttpGet]
