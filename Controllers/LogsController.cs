@@ -15,21 +15,22 @@ namespace GGLogsApi.Controllers
         }
 
         [HttpPost]
-        public void Post(string message, string stacktrace)
+        public async Task Post(List<LogMessage> messages)
         {
-            LogMessage _logMessage = new LogMessage();
-            _logMessage.Message = message;
-            _appContext.Add(_logMessage);
-            _appContext.SaveChanges();
+            await _appContext.AddRangeAsync(messages);
+            await _appContext.SaveChangesAsync();
         }
 
         [HttpGet]
-        public List<LogMessage> Get(int n)
+        public List<LogMessage> Get(int count)
         {
-            List<LogMessage> result = _appContext.LogMessages.AsEnumerable().OrderBy(item => item.CreatedAt).Take(n).ToList();
+            List<LogMessage> result = _appContext.LogMessages
+                .AsEnumerable()
+                .OrderBy(item => item.CreatedAt)
+                .Take(count)
+                .ToList();
+
             return result;
         }
-
-
     }
 }

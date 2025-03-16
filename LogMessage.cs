@@ -15,6 +15,6 @@ namespace GGLogsApi
         public string SystemDetails { get; set; } = null!;
         public string ProgramVersion { get; set; } = null!;
         public string ProgramName { get; set; } = null!;
-        public string CreatedAt { get; set; } = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }
