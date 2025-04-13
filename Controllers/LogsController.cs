@@ -26,7 +26,7 @@ namespace GGLogsApi.Controllers
         {
             List<LogMessage> result = _appContext.LogMessages
                 .AsEnumerable()
-                .OrderBy(item => item.CreatedAt)
+                .OrderByDescending(item => item.CreatedAt)
                 .Take(count)
                 .ToList();
 
