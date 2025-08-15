@@ -1,0 +1,98 @@
+﻿@model GGLogsApi.ViewModels.StatsViewModel
+@{
+    ViewData["Title"] = "Stats";
+    string Json(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header">Custom range</div>
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">From (UTC)</label>
+                <input type="datetime-local" name="from" class="form-control" value="@(Model.From?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To (UTC)</label>
+                <input type="datetime-local" name="to" class="form-control" value="@(Model.To?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary" type="submit">Apply</button>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Stats", "LogsUi")">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Period != null)
+{
+    <div class="card shadow-sm">
+        <div class="card-header">Stats for period</div>
+        <div class="card-body">
+            <canvas id="periodChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <section id="periodData" data-json='@Html.Raw(Json(Model.Period))'></section>
+
+    @section Scripts {
+        <script>
+            function drawBar(canvasId, data){
+              const levels = ["Trace","Debug","Information","Warning","Error","Critical"];
+              const values = levels.map(l => data[l] ?? 0);
+              new Chart(document.getElementById(canvasId), {
+                type: 'bar',
+                data: { labels: levels, datasets: [{ label: 'Count', data: values }] },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+              });
+            }
+            const periodData = JSON.parse(document.getElementById('periodData').dataset.json);
+            drawBar('periodChart', periodData);
+        </script>
+    }
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">Last 24 hours</div>
+                <div class="card-body"><canvas id="dChart" height="120"></canvas></div>
+            </div>
+            <section id="dData" data-json='@Html.Raw(Json(Model.LastDay))'></section>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">Last 7 days</div>
+                <div class="card-body"><canvas id="wChart" height="120"></canvas></div>
+            </div>
+            <section id="wData" data-json='@Html.Raw(Json(Model.LastWeek))'></section>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">Last 30 days</div>
+                <div class="card-body"><canvas id="mChart" height="120"></canvas></div>
+            </div>
+            <section id="mData" data-json='@Html.Raw(Json(Model.LastMonth))'></section>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            function drawBar(canvasId, data){
+              const levels = ["Trace","Debug","Information","Warning","Error","Critical"];
+              const values = levels.map(l => (data && data[l]) ? data[l] : 0);
+              new Chart(document.getElementById(canvasId), {
+                type: 'bar',
+                data: { labels: levels, datasets: [{ label: 'Count', data: values }] },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+              });
+            }
+            drawBar('dChart', JSON.parse(document.getElementById('dData').dataset.json));
+            drawBar('wChart', JSON.parse(document.getElementById('wData').dataset.json));
+            drawBar('mChart', JSON.parse(document.getElementById('mData').dataset.json));
+        </script>
+    }
+}

@@ -1,0 +1,34 @@
+﻿.badge-level-0 {
+    background-color: #6c757d;
+}
+/* Trace */
+.badge-level-1 {
+    background-color: #6c757d;
+}
+/* Debug */
+.badge-level-2 {
+    background-color: #0d6efd;
+}
+/* Information */
+.badge-level-3 {
+    background-color: #ffc107;
+    color: #000;
+}
+/* Warning */
+.badge-level-4 {
+    background-color: #dc3545;
+}
+/* Error */
+.badge-level-5 {
+    background-color: #6f0000;
+}
+/* Critical */
+
+.code-block {
+    white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: .5rem;
+}

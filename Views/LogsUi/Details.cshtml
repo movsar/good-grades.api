@@ -1,0 +1,41 @@
+﻿@model GGLogsApi.LogMessage
+@{
+    ViewData["Title"] = "Log Details";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between">
+        <div>Log #@Model.Id</div>
+        <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Index", "LogsUi")">Back</a>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-4"><strong>CreatedAt:</strong> @Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") <small class="text-muted" title="@Model.CreatedAt.ToString("u")">(UTC: @Model.CreatedAt.ToString("u"))</small></div>
+            <div class="col-md-2"><strong>Level:</strong> <span class="badge badge-level-@Model.Level">@Model.Level</span></div>
+            <div class="col-md-3"><strong>Program:</strong> @Model.ProgramName</div>
+            <div class="col-md-3"><strong>Version:</strong> @Model.ProgramVersion</div>
+            <div class="col-md-6"><strong>Windows:</strong> @Model.WindowsVersion</div>
+            <div class="col-md-6"><strong>System:</strong> @Model.SystemDetails</div>
+        </div>
+
+        <hr />
+        <h5>Message</h5>
+        <div class="code-block">@Model.Message</div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StackTrace))
+        {
+            <h5 class="mt-3">StackTrace</h5>
+            <div class="code-block" id="stack">@Model.StackTrace</div>
+            <button class="btn btn-outline-primary mt-2" onclick="copyStack()">Copy StackTrace</button>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyStack(){
+            const txt = document.getElementById('stack')?.innerText || '';
+            navigator.clipboard.writeText(txt);
+        }
+    </script>
+}

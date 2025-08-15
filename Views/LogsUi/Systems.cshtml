@@ -1,0 +1,35 @@
+﻿@model GGLogsApi.ViewModels.SystemsViewModel
+@{
+    ViewData["Title"] = "Systems";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">Systems (by SystemDetails)</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>SystemDetails</th>
+                        <th>Count</th>
+                        <th>Last Log (local)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Items)
+                    {
+                        <tr>
+                            <td>@s.SystemDetails</td>
+                            <td>@s.Count</td>
+                            <td title="@s.LastLogAt.ToString("u")">@s.LastLogAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="LogsUi" asp-action="Index" asp-route-systemDetails="@s.SystemDetails">View logs</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,188 @@
+﻿@model GGLogsApi.ViewModels.PagedLogsViewModel
+@{
+    ViewData["Title"] = "Logs";
+    var filter = Model.Filter;
+    string Q(string key, object? value)
+    {
+        // helper for building query strings (null => omit)
+        return value == null ? "" : $"{key}={Uri.EscapeDataString(Convert.ToString(value) ?? "")}&";
+    }
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">Filters</div>
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">From (UTC)</label>
+                <input type="datetime-local" class="form-control" name="from" value="@(filter.From?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To (UTC)</label>
+                <input type="datetime-local" class="form-control" name="to" value="@(filter.To?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Level</label>
+                <select name="level" class="form-select">
+                    <option value="">Any</option>
+                    <option value="0" @(filter.Level==0?"selected":"")>Trace(0)</option>
+                    <option value="1" @(filter.Level==1?"selected":"")>Debug(1)</option>
+                    <option value="2" @(filter.Level==2?"selected":"")>Info(2)</option>
+                    <option value="3" @(filter.Level==3?"selected":"")>Warn(3)</option>
+                    <option value="4" @(filter.Level==4?"selected":"")>Error(4)</option>
+                    <option value="5" @(filter.Level==5?"selected":"")>Critical(5)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Search (message/stack)</label>
+                <input name="search" class="form-control" value="@filter.Search" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Program</label>
+                <input name="programName" class="form-control" value="@filter.ProgramName" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Version</label>
+                <input name="programVersion" class="form-control" value="@filter.ProgramVersion" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Windows</label>
+                <input name="windowsVersion" class="form-control" value="@filter.WindowsVersion" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">System</label>
+                <input list="systems" name="systemDetails" class="form-control" value="@filter.SystemDetails" />
+                <datalist id="systems">
+                    @foreach (var s in (IEnumerable<string>)ViewBag.Systems)
+                    {
+                        <option value="@s"></option>
+                    }
+                </datalist>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="hasStackTrace" value="true" @(filter.HasStackTrace == true ? "checked" : "") />
+                    <label class="form-check-label">Has stack</label>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Sort by</label>
+                <select name="sortBy" class="form-select">
+                    <option value="CreatedAt" @(filter.SortBy=="CreatedAt"?"selected":"")>CreatedAt</option>
+                    <option value="Level" @(filter.SortBy=="Level"?"selected":"")>Level</option>
+                    <option value="ProgramName" @(filter.SortBy=="ProgramName"?"selected":"")>ProgramName</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Dir</label>
+                <select name="sortDir" class="form-select">
+                    <option value="desc" @(filter.SortDir=="desc"?"selected":"")>desc</option>
+                    <option value="asc" @(filter.SortDir=="asc"?"selected":"")>asc</option>
+                </select>
+            </div>
+
+            <div class="col-md-12 d-flex gap-2 mt-2">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Index","LogsUi")">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>Logs (@Model.Total total)</div>
+        <div>
+            <form method="get" class="d-inline">
+                @* keep filters but change pageSize *@
+                <input type="hidden" name="from" value="@(filter.From?.ToString("s"))" />
+                <input type="hidden" name="to" value="@(filter.To?.ToString("s"))" />
+                <input type="hidden" name="level" value="@filter.Level" />
+                <input type="hidden" name="programName" value="@filter.ProgramName" />
+                <input type="hidden" name="programVersion" value="@filter.ProgramVersion" />
+                <input type="hidden" name="windowsVersion" value="@filter.WindowsVersion" />
+                <input type="hidden" name="systemDetails" value="@filter.SystemDetails" />
+                <input type="hidden" name="hasStackTrace" value="@(filter.HasStackTrace==true?"true":"")" />
+                <input type="hidden" name="search" value="@filter.Search" />
+                <input type="hidden" name="sortBy" value="@filter.SortBy" />
+                <input type="hidden" name="sortDir" value="@filter.SortDir" />
+                <input type="hidden" name="page" value="1" />
+                <select name="pageSize" class="form-select d-inline w-auto" onchange="this.form.submit()">
+                    <option value="50" @(Model.PageSize==50?"selected":"")>50</option>
+                    <option value="100" @(Model.PageSize==100?"selected":"")>100</option>
+                    <option value="150" @(Model.PageSize==150?"selected":"")>150</option>
+                    <option value="200" @(Model.PageSize==200?"selected":"")>200</option>
+                </select>
+            </form>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            <a href="@Url.Action("Index", new {
+                                page=1, filter.PageSize, filter.From, filter.To, filter.Level, filter.ProgramName, filter.ProgramVersion, filter.WindowsVersion, filter.SystemDetails, filter.HasStackTrace, filter.Search,
+                                SortBy="CreatedAt", SortDir=(filter.SortBy=="CreatedAt" && filter.SortDir=="asc"?"desc":"asc")
+                            })">CreatedAt</a>
+                        </th>
+                        <th>Level</th>
+                        <th>
+                            <a href="@Url.Action("Index", new {
+                                page=1, filter.PageSize, filter.From, filter.To, filter.Level, filter.ProgramName, filter.ProgramVersion, filter.WindowsVersion, filter.SystemDetails, filter.HasStackTrace, filter.Search,
+                                SortBy="ProgramName", SortDir=(filter.SortBy=="ProgramName" && filter.SortDir=="asc"?"desc":"asc")
+                            })">Program</a>
+                        </th>
+                        <th>Version</th>
+                        <th>Windows</th>
+                        <th>System</th>
+                        <th>Message</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var x in Model.Items)
+                {
+                    <tr>
+                        <td title="@x.CreatedAt.ToString("u")">@x.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>
+                            <span class="badge badge-level-@x.Level">@x.Level</span>
+                        </td>
+                        <td>@x.ProgramName</td>
+                        <td>@x.ProgramVersion</td>
+                        <td>@x.WindowsVersion</td>
+                        <td>@x.SystemDetails</td>
+                        <td class="text-truncate" style="max-width: 500px;" title="@x.Message">@x.Message</td>
+                        <td><a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@x.Id">Details</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination mb-0">
+                @{
+                    int start = Math.Max(1, Model.Page - 2);
+                    int end = Math.Min(Model.TotalPages, Model.Page + 2);
+                }
+                <li class="page-item @(Model.Page==1?"disabled":"")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = Model.Page-1, filter.PageSize, filter.From, filter.To, filter.Level, filter.ProgramName, filter.ProgramVersion, filter.WindowsVersion, filter.SystemDetails, filter.HasStackTrace, filter.Search, filter.SortBy, filter.SortDir })">Prev</a>
+                </li>
+                @for (int i = start; i <= end; i++)
+                {
+                    <li class="page-item @(i==Model.Page?"active":"")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = i, filter.PageSize, filter.From, filter.To, filter.Level, filter.ProgramName, filter.ProgramVersion, filter.WindowsVersion, filter.SystemDetails, filter.HasStackTrace, filter.Search, filter.SortBy, filter.SortDir })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page==Model.TotalPages?"disabled":"")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = Model.Page+1, filter.PageSize, filter.From, filter.To, filter.Level, filter.ProgramName, filter.ProgramVersion, filter.WindowsVersion, filter.SystemDetails, filter.HasStackTrace, filter.Search, filter.SortBy, filter.SortDir })">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
