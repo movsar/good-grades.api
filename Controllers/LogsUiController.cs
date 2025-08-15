@@ -51,7 +51,9 @@ namespace GGLogsApi.Controllers
 
             if (filter.From.HasValue) q = q.Where(x => x.CreatedAt >= filter.From.Value);
             if (filter.To.HasValue) q = q.Where(x => x.CreatedAt <= filter.To.Value);
-            if (filter.Level.HasValue) q = q.Where(x => x.Level == filter.Level.Value);
+
+            if (filter.Level.HasValue) q = q.Where(x => x.Level >= filter.Level.Value);
+
             if (!string.IsNullOrWhiteSpace(filter.ProgramName)) q = q.Where(x => x.ProgramName.Contains(filter.ProgramName));
             if (!string.IsNullOrWhiteSpace(filter.ProgramVersion)) q = q.Where(x => x.ProgramVersion.Contains(filter.ProgramVersion));
             if (!string.IsNullOrWhiteSpace(filter.WindowsVersion)) q = q.Where(x => x.WindowsVersion.Contains(filter.WindowsVersion));
@@ -135,29 +137,59 @@ namespace GGLogsApi.Controllers
 
             return View("Systems", new SystemsViewModel { Items = rows });
         }
-        
+
         [HttpGet]
         public async Task<IActionResult> Stats([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
         {
-            var vm = new StatsViewModel { From = from, To = to };
+            var nowUtc = DateTime.UtcNow;
 
+            // --- Normalize date range ---
             if (!from.HasValue && !to.HasValue)
             {
-                var now = DateTime.UtcNow;
-                var lastDayFrom = now.AddDays(-1);
-                var lastWeekFrom = now.AddDays(-7);
-                var lastMonthFrom = now.AddDays(-30);
+                // Default: last 24h
+                from = nowUtc.AddDays(-1);
+                to = nowUtc;
+            }
+            else if (from.HasValue && !to.HasValue)
+            {
+                // Only from provided -> 24h window forward
+                to = from.Value.AddDays(1);
+            }
+            else if (!from.HasValue && to.HasValue)
+            {
+                // Only to provided -> 24h window backward
+                from = to.Value.AddDays(-1);
+            }
 
-                vm.LastDay = await AggregateByLevel(_db.LogMessages.AsNoTracking().Where(x => x.CreatedAt >= lastDayFrom && x.CreatedAt <= now));
-                vm.LastWeek = await AggregateByLevel(_db.LogMessages.AsNoTracking().Where(x => x.CreatedAt >= lastWeekFrom && x.CreatedAt <= now));
-                vm.LastMonth = await AggregateByLevel(_db.LogMessages.AsNoTracking().Where(x => x.CreatedAt >= lastMonthFrom && x.CreatedAt <= now));
+            // Swap if reversed (user error)
+            if (from.HasValue && to.HasValue && from > to)
+                (from, to) = (to, from);
+
+            var vm = new StatsViewModel { From = from, To = to };
+
+            // If user explicitly provided a (possibly normalized) range, show that.
+            // Otherwise, also show the quick cards (last day/week/month).
+            // We detect "explicit" by checking the original query string — but to keep it simple:
+            // - If the caller supplied either from/to (even one), show Period
+            // - If neither supplied (we defaulted both), also show the summary cards.
+            bool userSuppliedAny = Request.Query.ContainsKey("from") || Request.Query.ContainsKey("to");
+
+            if (userSuppliedAny)
+            {
+                IQueryable<LogMessage> q = _db.LogMessages.AsNoTracking();
+                q = q.Where(x => x.CreatedAt >= from!.Value && x.CreatedAt <= to!.Value);
+                vm.Period = await AggregateByLevel(q);
             }
             else
             {
-                IQueryable<LogMessage> q = _db.LogMessages.AsNoTracking();
-                if (from.HasValue) q = q.Where(x => x.CreatedAt >= from.Value);
-                if (to.HasValue) q = q.Where(x => x.CreatedAt <= to.Value);
-                vm.Period = await AggregateByLevel(q);
+                // Show the standard cards PLUS pre-filled date inputs (vm.From/To already set to last 24h)
+                var lastDayFrom = nowUtc.AddDays(-1);
+                var lastWeekFrom = nowUtc.AddDays(-7);
+                var lastMonthFrom = nowUtc.AddDays(-30);
+
+                vm.LastDay = await AggregateByLevel(_db.LogMessages.AsNoTracking().Where(x => x.CreatedAt >= lastDayFrom && x.CreatedAt <= nowUtc));
+                vm.LastWeek = await AggregateByLevel(_db.LogMessages.AsNoTracking().Where(x => x.CreatedAt >= lastWeekFrom && x.CreatedAt <= nowUtc));
+                vm.LastMonth = await AggregateByLevel(_db.LogMessages.AsNoTracking().Where(x => x.CreatedAt >= lastMonthFrom && x.CreatedAt <= nowUtc));
             }
 
             return View("Stats", vm);
