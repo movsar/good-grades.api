@@ -28,11 +28,14 @@ namespace GGLogsApi
             var app = builder.Build();
 
             // Swagger
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles(); // for CSS/JS
+            app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthorization();
 

@@ -1,10 +1,12 @@
-﻿using GGLogsApi.Models;
+﻿using GGLogsApi.Attributes;
+using GGLogsApi.Models;
 using GGLogsApi.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace GGLogsApi.Controllers
 {
+    [BasicAuth("gg", "api")]
     public class LogsUiController : Controller
     {
         private readonly ApplicationContext _db;
