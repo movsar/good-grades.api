@@ -1,6 +1,4 @@
-
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace GGLogsApi
 {
@@ -10,10 +8,8 @@ namespace GGLogsApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            // MVC (controllers + views) and API controllers
+            builder.Services.AddControllersWithViews();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -24,24 +20,34 @@ namespace GGLogsApi
             }
 
             builder.Services.AddDbContext<ApplicationContext>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+            // Typed HTTP client for UI (not strictly needed now, but good for future)
+            builder.Services.AddHttpClient();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            // Swagger
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles(); // for CSS/JS
+            app.UseRouting();
             app.UseAuthorization();
+
+            // API routes
             app.MapControllers();
 
-            using (var Scope = app.Services.CreateScope())
+            // MVC default route (UI)
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=LogsUi}/{action=Index}/{id?}");
+
+            // Ensure DB exists/migrates (schema unchanged)
+            using (var scope = app.Services.CreateScope())
             {
-                var context = Scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
                 context.Database.Migrate();
             }
 
